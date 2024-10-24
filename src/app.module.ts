@@ -2,6 +2,7 @@ import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BasicReportsModule } from './basic-reports/basic-reports.module';
 import { DatabaseMiddleware } from './middlewares/database.middleware';
+import { PrinterModule } from './printer/printer.module';
 
 @Module({
   imports: [
@@ -9,6 +10,7 @@ import { DatabaseMiddleware } from './middlewares/database.middleware';
       isGlobal: true,
     }),
     BasicReportsModule,
+    PrinterModule,
   ],
 })
 export class AppModule implements NestModule {

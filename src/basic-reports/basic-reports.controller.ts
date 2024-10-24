@@ -1,14 +1,19 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Res } from '@nestjs/common';
 import { BasicReportsService } from './basic-reports.service';
 import { KardexAlmacen } from './entities/kardex-almacen.entity';
+import { Response } from 'express';
 
 @Controller('basic-reports')
 export class BasicReportsController {
   constructor(private readonly basicReportsService: BasicReportsService) {}
 
   @Get()
-  async getBasicReports(): Promise<string> {
-    return 'Hello from /basic-reports!';
+  async hello(@Res() response: Response){
+    const pdfDoc = await this.basicReportsService.hello();
+    response.setHeader('Content-Type', 'application/pdf');
+    pdfDoc.info.Title = "Hola - Mundo"
+    pdfDoc.pipe(response)
+    pdfDoc.end();
   }
 
   @Get('hello')

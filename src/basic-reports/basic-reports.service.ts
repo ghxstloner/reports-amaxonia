@@ -4,12 +4,23 @@ import { REQUEST } from '@nestjs/core';
 import { ParametrosGenerales } from './entities/parametros-generales.entity';
 import { KardexAlmacen } from './entities/kardex-almacen.entity';
 import { KardexAlmacenDetalle } from './entities/kardex-almacen-detalle.entity';
+import { PrinterService } from 'src/printer/printer.service';
+import { getHelloWorldReport } from '../reports/hello-world.report';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BasicReportsService {
   constructor(
+    private readonly printerService: PrinterService,
     @Inject(REQUEST) private readonly req: Request, 
   ) {}
+
+   hello(){
+    const docDefinition = getHelloWorldReport({
+      name: "Yoiner Moreno"
+    });
+    const doc = this.printerService.createPdf(docDefinition);
+    return doc;
+  }
 
   async getAllParametrosGenerales(): Promise<ParametrosGenerales[]> {
     const manager = this.req['dbConnection'];
