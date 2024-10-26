@@ -1,9 +1,9 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { DataSource, DataSourceOptions } from 'typeorm';
-import { ParametrosGenerales } from '../basic-reports/entities/parametros-generales.entity';
-import { KardexAlmacen } from '../basic-reports/entities/kardex-almacen.entity';
-import { KardexAlmacenDetalle } from '../basic-reports/entities/kardex-almacen-detalle.entity';
+import { ParametrosGenerales } from '../entities/parametros-generales.entity';
+import { KardexAlmacen } from '../entities/kardex-almacen.entity';
+import { KardexAlmacenDetalle } from '../entities/kardex-almacen-detalle.entity';
 
 @Injectable()
 export class DatabaseMiddleware implements NestMiddleware {

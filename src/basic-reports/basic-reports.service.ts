@@ -1,11 +1,12 @@
 import { Injectable, Inject, Scope } from '@nestjs/common';
 import { Request } from 'express';
 import { REQUEST } from '@nestjs/core';
-import { ParametrosGenerales } from './entities/parametros-generales.entity';
-import { KardexAlmacen } from './entities/kardex-almacen.entity';
-import { KardexAlmacenDetalle } from './entities/kardex-almacen-detalle.entity';
+import { ParametrosGenerales } from '../entities/parametros-generales.entity';
+import { KardexAlmacen } from '../entities/kardex-almacen.entity';
+import { KardexAlmacenDetalle } from '../entities/kardex-almacen-detalle.entity';
 import { PrinterService } from 'src/printer/printer.service';
 import { getHelloWorldReport } from '../reports/hello-world.report';
+import { getEmploymentLetterReport } from 'src/reports/employment-letter.report';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BasicReportsService {
@@ -15,9 +16,7 @@ export class BasicReportsService {
   ) {}
 
    hello(){
-    const docDefinition = getHelloWorldReport({
-      name: "Yoiner Moreno"
-    });
+    const docDefinition = getEmploymentLetterReport();
     const doc = this.printerService.createPdf(docDefinition);
     return doc;
   }

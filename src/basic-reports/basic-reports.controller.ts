@@ -1,6 +1,6 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import { BasicReportsService } from './basic-reports.service';
-import { KardexAlmacen } from './entities/kardex-almacen.entity';
+import { KardexAlmacen } from '../entities/kardex-almacen.entity';
 import { Response } from 'express';
 
 @Controller('basic-reports')
