@@ -1,9 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { DataSource, DataSourceOptions } from 'typeorm';
-import { ParametrosGenerales } from '../entities/parametros-generales.entity';
-import { KardexAlmacen } from '../entities/kardex-almacen.entity';
-import { KardexAlmacenDetalle } from '../entities/kardex-almacen-detalle.entity';
+import * as entities from 'src/entities';
 
 @Injectable()
 export class DatabaseMiddleware implements NestMiddleware {
@@ -25,7 +23,7 @@ export class DatabaseMiddleware implements NestMiddleware {
           username: process.env.DB_USERNAME,
           password: process.env.DB_PASSWORD,
           database: databaseName,
-          entities: [ParametrosGenerales, KardexAlmacen, KardexAlmacenDetalle],
+          entities: Object.values(entities),          
           synchronize: false,
           logging: true,
         } as DataSourceOptions);

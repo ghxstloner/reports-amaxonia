@@ -8,6 +8,13 @@ const logo: Content = {
     absolutePosition: { x: 15, y: 20 }
 };
 
+const currentDate: Content = {
+    text: DateFormatter.getDDMMYYYY(new Date()),
+    alignment: 'right',
+    margin: [20, 20],
+    width: 180
+}
+
 interface HeaderOptions {
     title?: string;
     subTitle?: string;
@@ -19,19 +26,16 @@ export const headerSection = (options: HeaderOptions): Content => {
     const { title, subTitle, showLogo = true, showDate = true } = options;
 
     const headerLogo: Content = showLogo ? logo : null;
-    const headerDate: Content = showDate ? {
-        text: DateFormatter.getDDMMYYYY(new Date()),
-        alignment: 'right',
-        margin: [20, 20]
-    } : null
+    const headerDate: Content = showDate ? currentDate : null;
     const headerTitle: Content = title ? {
-        text: title,
-        style: {
-            bold: true,
-        },
-    } : null
+        stack: [
+            { text: title, fontSize: 22, bold: true, alignment: 'center', margin: [0, 15, 0, 5] },
+            { text: subTitle, fontSize: 15, bold: true, alignment: 'center' }
+        ]
+    } : null;
 
     return {
         columns: [headerLogo, headerTitle, headerDate],
-    }
+        columnGap: 10
+    };
 };

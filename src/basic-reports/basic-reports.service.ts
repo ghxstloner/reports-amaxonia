@@ -1,12 +1,14 @@
 import { Injectable, Inject, Scope } from '@nestjs/common';
 import { Request } from 'express';
 import { REQUEST } from '@nestjs/core';
-import { ParametrosGenerales } from '../entities/parametros-generales.entity';
-import { KardexAlmacen } from '../entities/kardex-almacen.entity';
-import { KardexAlmacenDetalle } from '../entities/kardex-almacen-detalle.entity';
+import { KardexAlmacen, KardexAlmacenDetalle, Country, ParametrosGenerales } from 'src/entities';
 import { PrinterService } from 'src/printer/printer.service';
-import { getHelloWorldReport } from '../reports/hello-world.report';
-import { getEmploymentLetterReport } from 'src/reports/employment-letter.report';
+import { Not, IsNull } from 'typeorm';
+import {
+  getCountryReport,
+  getEmploymentLetterReport,
+  getHelloWorldReport
+} from 'src/reports'
 
 @Injectable({ scope: Scope.REQUEST })
 export class BasicReportsService {
@@ -15,11 +17,40 @@ export class BasicReportsService {
     @Inject(REQUEST) private readonly req: Request, 
   ) {}
 
-   hello(){
+  hello(){
+    const docDefinition = getHelloWorldReport({
+      name: "Yoiner"
+    })
+    const doc = this.printerService.createPdf(docDefinition);
+    return doc;
+  }
+
+   employmentLetter(){
     const docDefinition = getEmploymentLetterReport();
     const doc = this.printerService.createPdf(docDefinition);
     return doc;
   }
+
+  async getCountries() {
+    const manager = this.req['dbConnection'];
+    const repository = manager.getRepository(Country);
+
+    const countriesData = await repository.find({
+        where: {
+            localName: Not(IsNull()),
+        },
+    });
+
+    const docDefinition = getCountryReport({
+        title: 'Countries Report',
+        subTitle: 'List of Countries',
+        data: countriesData,
+    });
+
+    return this.printerService.createPdf(docDefinition);
+}
+
+
 
   async getAllParametrosGenerales(): Promise<ParametrosGenerales[]> {
     const manager = this.req['dbConnection'];

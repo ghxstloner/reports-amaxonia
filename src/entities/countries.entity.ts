@@ -24,7 +24,7 @@ export class Country {
   @Column('char', { length: 3, nullable: true, comment: 'ISO 3166-1 alpha-3 code.' })
   iso3: string;
 
-  @Column('text', { nullable: true, comment: 'Local variation of the name.' })
+  @Column('text', { name: 'local_name', nullable: true, comment: 'Local variation of the name.' })
   localName: string;
 
   @Column({
