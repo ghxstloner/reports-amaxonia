@@ -46,9 +46,9 @@ export class BasicReportsController {
       @Res() response: Response,
   ) {
       const data = await this.basicReportsService.getKardexReport(fechaInicio, fechaFin);
-      const pdfDoc = await this.basicReportsService.generateKardexPDFReport(data);
+      const pdfDoc = await this.basicReportsService.generateKardexPDFReport(data, fechaInicio, fechaFin);
       response.setHeader('Content-Type', 'application/pdf');
-      pdfDoc.info.Title = "Kardex Report";
+      pdfDoc.info.Title = "Reporte Kardex";
       pdfDoc.pipe(response);
       pdfDoc.end();
   }

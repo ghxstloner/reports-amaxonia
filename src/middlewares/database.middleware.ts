@@ -25,7 +25,7 @@ export class DatabaseMiddleware implements NestMiddleware {
           database: databaseName,
           entities: Object.values(entities),          
           synchronize: false,
-          logging: true,
+          logging: false,
         } as DataSourceOptions);
 
         await newDataSource.initialize();
