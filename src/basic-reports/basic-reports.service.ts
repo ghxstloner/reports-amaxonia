@@ -4,7 +4,6 @@ import { REQUEST } from '@nestjs/core';
 import {
   KardexAlmacen,
   KardexAlmacenDetalle,
-  Country,
   ParametrosGenerales,
   FacturaDetalle,
   CompraDetalle
@@ -12,9 +11,6 @@ import {
 import { PrinterService } from 'src/printer/printer.service';
 import { Not, IsNull, Between, In } from 'typeorm';
 import {
-  getCountryReport,
-  getEmploymentLetterReport,
-  getHelloWorldReport,
   getKardexReport
 } from 'src/reports'
 
@@ -24,39 +20,6 @@ export class BasicReportsService {
     private readonly printerService: PrinterService,
     @Inject(REQUEST) private readonly req: Request,
   ) { }
-
-  hello() {
-    const docDefinition = getHelloWorldReport({
-      name: "Yoiner"
-    })
-    const doc = this.printerService.createPdf(docDefinition);
-    return doc;
-  }
-
-  employmentLetter() {
-    const docDefinition = getEmploymentLetterReport();
-    const doc = this.printerService.createPdf(docDefinition);
-    return doc;
-  }
-
-  async getCountries() {
-    const manager = this.req['dbConnection'];
-    const repository = manager.getRepository(Country);
-
-    const countriesData = await repository.find({
-      where: {
-        localName: Not(IsNull()),
-      },
-    });
-
-    const docDefinition = getCountryReport({
-      title: 'Countries Report',
-      subTitle: 'List of Countries',
-      data: countriesData,
-    });
-
-    return this.printerService.createPdf(docDefinition);
-  }
 
   async getFirstKardexAlmacen(): Promise<KardexAlmacen> {
     const manager = this.req['dbConnection'];

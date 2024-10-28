@@ -7,36 +7,9 @@ import { Response } from 'express';
 export class BasicReportsController {
   constructor(private readonly basicReportsService: BasicReportsService) { }
 
-  @Get('hello')
-  async hello(@Res() response: Response) {
-    const pdfDoc = await this.basicReportsService.hello();
-    response.setHeader('Content-Type', 'application/pdf');
-    pdfDoc.info.Title = "Hola - Mundo"
-    pdfDoc.pipe(response)
-    pdfDoc.end();
-  }
-
-  @Get('employee')
-  async employeeLetterRepport(@Res() response: Response) {
-    const pdfDoc = await this.basicReportsService.employmentLetter();
-    response.setHeader('Content-Type', 'application/pdf');
-    pdfDoc.info.Title = "Hola - Mundo"
-    pdfDoc.pipe(response)
-    pdfDoc.end();
-  }
-
   @Get('kardex')
   async getFirstKardexAlmacen(): Promise<KardexAlmacen> {
     return this.basicReportsService.getFirstKardexAlmacen();
-  }
-
-  @Get('countries')
-  async getCountryReport(@Res() response: Response) {
-    const pdfDoc = await this.basicReportsService.getCountries();
-    response.setHeader('Content-Type', 'application/pdf');
-    pdfDoc.info.Title = "Hola - Mundo"
-    pdfDoc.pipe(response)
-    pdfDoc.end();
   }
 
   @Get('kardex-report')
