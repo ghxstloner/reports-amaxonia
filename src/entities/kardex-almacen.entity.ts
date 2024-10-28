@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryColumn, Index } from 'typeorm';
+import { Entity, Column, PrimaryColumn, Index, OneToMany } from 'typeorm';
+import { KardexAlmacenDetalle } from './kardex-almacen-detalle.entity';
 
 @Entity('kardex_almacen')
 @Index('fk_id_tipo_movimiento_almacen', ['tipo_movimiento_almacen'])
@@ -110,4 +111,7 @@ export class KardexAlmacen {
 
   @Column({ type: 'tinyint', default: 1 })
   controla_stock: number;
+
+  @OneToMany(() => KardexAlmacenDetalle, detalle => detalle.kardexAlmacen)
+  detalle: KardexAlmacenDetalle[];
 }

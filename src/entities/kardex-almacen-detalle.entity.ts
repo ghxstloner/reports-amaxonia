@@ -1,4 +1,6 @@
-import { Entity, Column, PrimaryColumn, Index } from 'typeorm';
+import { Entity, Column, PrimaryColumn, Index, ManyToOne, JoinColumn } from 'typeorm';
+import { KardexAlmacen } from './kardex-almacen.entity';
+import { Item } from './item.entity';
 
 @Entity('kardex_almacen_detalle')
 @Index('fk_id_transaccion', ['id_transaccion'])
@@ -12,6 +14,14 @@ export class KardexAlmacenDetalle {
 
   @Column({ length: 36 })
   id_transaccion: string;
+
+  @ManyToOne(() => KardexAlmacen, kardexAlmacen => kardexAlmacen.detalle)
+  @JoinColumn({ name: 'id_transaccion' })
+  kardexAlmacen: KardexAlmacen;
+
+  @ManyToOne(() => Item)
+  @JoinColumn({ name: 'id_item' })
+  item: Item;
 
   @Column({ type: 'int', nullable: true })
   id_detalle_compra: number;

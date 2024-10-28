@@ -3,11 +3,12 @@ import { Request } from 'express';
 import { REQUEST } from '@nestjs/core';
 import { KardexAlmacen, KardexAlmacenDetalle, Country, ParametrosGenerales } from 'src/entities';
 import { PrinterService } from 'src/printer/printer.service';
-import { Not, IsNull } from 'typeorm';
+import { Not, IsNull, Between, In } from 'typeorm';
 import {
   getCountryReport,
   getEmploymentLetterReport,
-  getHelloWorldReport
+  getHelloWorldReport,
+  getKardexReport
 } from 'src/reports'
 
 @Injectable({ scope: Scope.REQUEST })
@@ -48,26 +49,6 @@ export class BasicReportsService {
     });
 
     return this.printerService.createPdf(docDefinition);
-}
-
-
-
-  async getAllParametrosGenerales(): Promise<ParametrosGenerales[]> {
-    const manager = this.req['dbConnection'];
-    const repository = manager.getRepository(ParametrosGenerales);
-    return repository.find();
-  }
-
-  async getAllKardexAlmacen(): Promise<KardexAlmacen[]> {
-    const manager = this.req['dbConnection'];
-    const repository = manager.getRepository(KardexAlmacen);
-    return repository.find({ relations: ['detalles'] });
-  }
-
-  async getAllKardexAlmacenDetalle(): Promise<KardexAlmacenDetalle[]> {
-    const manager = this.req['dbConnection'];
-    const repository = manager.getRepository(KardexAlmacenDetalle);
-    return repository.find({ relations: ['kardexAlmacen'] });
   }
 
   async getFirstKardexAlmacen(): Promise<KardexAlmacen> {
@@ -79,4 +60,55 @@ export class BasicReportsService {
     });
     return firstRecord;
   }
+
+  async getKardexReport(fechaInicio: string, fechaFin: string) {
+    const manager = this.req['dbConnection'];
+    const kardexRepository = manager.getRepository(KardexAlmacen);
+
+    // Definir los tipos de movimiento para Entrada y Salida
+    const tiposMovimientoEntrada = [1, 3, 12];
+    const tiposMovimientoSalida = [2, 4, 13];
+
+    // Consulta a KardexAlmacen con relaciones explícitas
+    const transacciones = await kardexRepository
+      .createQueryBuilder("kardexAlmacen")
+      .leftJoinAndSelect("kardexAlmacen.detalle", "detalle")
+      .leftJoinAndSelect("detalle.item", "item")
+      .select([
+          "kardexAlmacen.id_transaccion",
+          "kardexAlmacen.tipo_movimiento_almacen",
+          "kardexAlmacen.fecha",
+          "detalle.id_transaccion_detalle",
+          "detalle.cantidad",
+          "item.id_item",
+          "item.descripcion1",
+          "item.referencia",
+      ])
+      .where("kardexAlmacen.fecha BETWEEN :start AND :end", { start: fechaInicio, end: fechaFin })
+      .andWhere("kardexAlmacen.tipo_movimiento_almacen IN (:...tipos)", { tipos: [...tiposMovimientoEntrada, ...tiposMovimientoSalida] })
+      .getMany();
+
+
+    // Asegúrate de que data esté en una estructura plana
+    const data = transacciones.flatMap(transaccion =>
+        transaccion.detalle.map(detalle => ({
+            codigo: detalle.item.referencia, // referencia en la entidad `Item`
+            descripcion: detalle.item.descripcion, // descripción en la entidad `Item`
+            cantidad: detalle.cantidad,
+            tipoMovimiento: tiposMovimientoEntrada.includes(transaccion.tipo_movimiento_almacen) ? 'Entrada' : 'Salida',
+        }))
+    );
+
+    return data;
+}
+
+async generateKardexPDFReport(data) {
+    const docDefinition = getKardexReport({
+        title: 'Kardex Report',
+        subTitle: 'Reporte de Movimientos de Almacén',
+        data,
+    });
+    return this.printerService.createPdf(docDefinition);
+}
+
 }
