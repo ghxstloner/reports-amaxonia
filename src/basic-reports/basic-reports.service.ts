@@ -11,6 +11,7 @@ import { Not, IsNull, Between, In } from 'typeorm';
 import {
   getKardexReport
 } from 'src/reports'
+import { logInfo } from 'src/helpers';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BasicReportsService {
@@ -66,7 +67,7 @@ export class BasicReportsService {
     .setParameter("tiposMovimientoSalida", tiposMovimientoSalida)
     .getRawMany();
 
-    console.error("Existencia Inicial Transacciones:", existenciaInicialTransacciones);
+    logInfo(`Existencia Inicial Transacciones: ${JSON.stringify(existenciaInicialTransacciones)}`);
 
     const groupedData = {};
 
