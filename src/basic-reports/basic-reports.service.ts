@@ -66,6 +66,8 @@ export class BasicReportsService {
     .setParameter("tiposMovimientoSalida", tiposMovimientoSalida)
     .getRawMany();
 
+    console.log("Existencia Inicial Transacciones:", existenciaInicialTransacciones);
+
     const groupedData = {};
 
     for (const item of existenciaInicialTransacciones) {
