@@ -5,7 +5,7 @@ import type { BufferOptions, CustomTableLayout, TDocumentDefinitions } from 'pdf
 const fonts = {
   Roboto: {
     normal: 'fonts/Roboto-Regular.ttf',
-    bold: 'fonts/Roboto-Medium.ttf',
+    bold: 'fonts/Roboto-Black.ttf',
     italics:'fonts/Roboto-Italic.ttf',
     bolditalics: 'fonts/Roboto-MediumItalic.ttf'
   }
@@ -33,7 +33,7 @@ const customTableLayouts: Record<string, CustomTableLayout> = {
     },
     fillColor: function(i) {
       if(i === 0){
-        return '#515151'
+        return '#7b90be'
       }
       return i % 2 === 0 ? '#f3f3f3' : null;
     }
