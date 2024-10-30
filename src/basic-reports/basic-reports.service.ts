@@ -36,38 +36,39 @@ export class BasicReportsService {
 
     const tiposMovimientoEntrada = [1, 3, 12];
     const tiposMovimientoSalida = [2, 4, 13];
-
+    
     // Ajustar inventario inicial hasta el día anterior a `fechaInicio`
     const existenciaInicialTransacciones = await kardexRepository
-    .createQueryBuilder("kardexAlmacen")
-    .leftJoin("kardexAlmacen.detalle", "detalle")
-    .leftJoin("detalle.item", "item")
-    .select([
-      "detalle.id_item AS idItem",
-      "item.referencia AS codigo",
-      "item.descripcion1 AS descripcion1",
-      "item.costo_actual AS costoUnitario",
-      `(SELECT COALESCE(SUM(
-          CASE WHEN subKardex.tipo_movimiento_almacen IN (1, 3, 12) THEN subDetalle.cantidad
-               WHEN subKardex.tipo_movimiento_almacen IN (2, 4, 13) THEN -subDetalle.cantidad
-               ELSE 0
-          END
-      ), 0) 
-      FROM kardex_almacen AS subKardex
-      LEFT JOIN kardex_almacen_detalle AS subDetalle ON subKardex.id_transaccion = subDetalle.id_transaccion
-      WHERE subKardex.fecha < :start AND subDetalle.id_item = detalle.id_item
-      ) AS existenciaInicial`
-    ])
-    .where("kardexAlmacen.fecha < :start", { start: fechaInicio })
-    .groupBy("detalle.id_item")
-    .addGroupBy("item.referencia")
-    .addGroupBy("item.descripcion1")
-    .addGroupBy("item.costo_actual")
-    .getRawMany();
-
-  logInfo(`Resultados existenciaInicialTransacciones: ${JSON.stringify(existenciaInicialTransacciones)}`);
-
-
+      .createQueryBuilder("kardexAlmacen")
+      .leftJoin("kardexAlmacen.detalle", "detalle")
+      .leftJoin("detalle.item", "item")
+      .select([
+        "detalle.id_item AS idItem",
+        "item.referencia AS codigo",
+        "item.descripcion1 AS descripcion1",
+        "item.costo_actual AS costoUnitario",
+        `(SELECT COALESCE(SUM(
+            CASE 
+              WHEN subKardex.tipo_movimiento_almacen IN (:...tiposMovimientoEntrada) THEN subDetalle.cantidad
+              WHEN subKardex.tipo_movimiento_almacen IN (:...tiposMovimientoSalida) THEN -subDetalle.cantidad
+              ELSE 0
+            END
+          ), 0) 
+          FROM kardex_almacen AS subKardex
+          LEFT JOIN kardex_almacen_detalle AS subDetalle ON subKardex.id_transaccion = subDetalle.id_transaccion
+          WHERE subKardex.fecha < :start AND subDetalle.id_item = detalle.id_item
+        ) AS existenciaInicial`
+      ])
+      // Eliminamos la condición de fecha en la consulta principal
+      .groupBy("detalle.id_item")
+      .addGroupBy("item.referencia")
+      .addGroupBy("item.descripcion1")
+      .addGroupBy("item.costo_actual")
+      .setParameter("start", fechaInicio)
+      .setParameter("tiposMovimientoEntrada", tiposMovimientoEntrada)
+      .setParameter("tiposMovimientoSalida", tiposMovimientoSalida)
+      .getRawMany();
+    
     const groupedData = {};
 
     for (const item of existenciaInicialTransacciones) {
