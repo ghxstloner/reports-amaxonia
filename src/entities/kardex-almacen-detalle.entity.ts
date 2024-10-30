@@ -88,4 +88,7 @@ export class KardexAlmacenDetalle {
 
   @Column({ type: 'int', nullable: true })
   id_detalle_factura_proveedor: number;
+
+  @Column("decimal", { precision: 10, scale: 2, nullable: false })
+  costo: number;
 }

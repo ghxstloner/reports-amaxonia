@@ -24,14 +24,14 @@ interface HeaderOptions {
 }
 
 export const headerCustomSection = (options: HeaderOptions): Content => {
-    const { title, subTitle, showDate = true, startDate, endDate, companyParams } = options;
+    const { showDate = true, startDate, endDate, companyParams } = options;
 
     const headerCompanyParams: Content = {
         stack: [
-            { text: companyParams?.nombre_empresa ?? 'Nombre de la Empresa', fontSize: 10, bold: true, alignment: 'left' },
-            { text: companyParams?.direccion ?? 'Dirección de la Empresa', fontSize: 9, alignment: 'left', margin: [0, 2, 0, 0] },
-            { text: `Teléfono: ${companyParams?.telefonos ?? '9999-9999'}`, fontSize: 9, alignment: 'left', margin: [0, 2, 0, 0] },
-            { text: `RIF: ${companyParams?.rif ?? '99999999-9999'}`, fontSize: 9, alignment: 'left', margin: [0, 2, 0, 0] }
+            { text: companyParams?.nombre_empresa ?? 'Nombre de la Empresa', fontSize: 12, bold: true, alignment: 'left' },
+            { text: companyParams?.direccion ?? 'Dirección de la Empresa', fontSize: 7, alignment: 'left', margin: [0, 2, 0, 0] },
+            { text: `Teléfono: ${companyParams?.telefonos ?? '9999-9999'}`, fontSize: 7, alignment: 'left', margin: [0, 2, 0, 0] },
+            { text: `${companyParams?.rif ?? '99999999-9999'}`, fontSize: 7, alignment: 'left', margin: [0, 2, 0, 0] }
         ],
         margin: [15, 10, 0, 0]
     };
@@ -39,14 +39,14 @@ export const headerCustomSection = (options: HeaderOptions): Content => {
     const headerDates: Content = {
         stack: [
             { 
-                text: title ?? 'Título del Reporte', 
+                text:  null, 
                 fontSize: 16, 
                 bold: true, 
                 alignment: 'center', 
                 margin: [0, 5, 0, 3] 
             },
             { 
-                text: subTitle ?? 'Subtítulo del Reporte', 
+                text: null, 
                 fontSize: 11, 
                 italics: true, 
                 alignment: 'center', 
@@ -56,7 +56,7 @@ export const headerCustomSection = (options: HeaderOptions): Content => {
                 text: `Fecha Desde: ${startDate ?? 'N/A'}      Fecha Hasta: ${endDate ?? 'N/A'}`,
                 alignment: 'center',
                 fontSize: 10,
-                margin: [0, 0, 0, 5],
+                margin: [0, 0, 0, 10],
                 color: '#333333'
             }
         ],

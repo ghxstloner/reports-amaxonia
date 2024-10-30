@@ -33,7 +33,7 @@ const customTableLayouts: Record<string, CustomTableLayout> = {
     },
     fillColor: function(i) {
       if(i === 0){
-        return '#7b90be'
+        return '#515151'
       }
       return i % 2 === 0 ? '#f3f3f3' : null;
     }
