@@ -27,16 +27,14 @@ interface KardexReportOptions {
 export const getKardexReport = (options: KardexReportOptions): TDocumentDefinitions => {
     const { title, subTitle, data, startDate, endDate, companyParams } = options;
 
-    const totalMontoEntrada = parseFloat(data.reduce((sum, item) => sum + (item.cantidadEntrada * item.costoUnitario), 0).toFixed(2));
-    const totalMontoSalida = parseFloat(data.reduce((sum, item) => sum + item.montoSalida, 0).toFixed(2));
-    const totalMontoExistenciaInicial = parseFloat(data.reduce((sum, item) => sum + (item.existenciaInicial * item.costoUnitario), 0).toFixed(2));
-    const totalMontoConsumo = parseFloat(data.reduce((sum, item) => sum + ((item.cantidadConsumo ?? 0) * (item.costoUnitario ?? 0)), 0).toFixed(2));
-    const totalExistenciaFinal = parseFloat(data.reduce((sum, item) => {
+    const totalMontoEntrada = data.reduce((sum, item) => sum + (item.cantidadEntrada * item.costoUnitario), 0).toFixed(2);
+    const totalMontoSalida = data.reduce((sum, item) => sum + item.montoSalida, 0).toFixed(2);
+    const totalMontoExistenciaInicial = data.reduce((sum, item) => sum + (item.existenciaInicial * item.costoUnitario), 0).toFixed(2);
+    const totalMontoConsumo = data.reduce((sum, item) => sum + ((item.cantidadConsumo ?? 0) * (item.costoUnitario ?? 0)), 0).toFixed(2);
+    const totalExistenciaFinal = data.reduce((sum, item) => {
         const existenciaFinal = (item.existenciaInicial ?? 0) + (item.cantidadEntrada ?? 0) - (item.cantidadSalida ?? 0) - (item.cantidadConsumo ?? 0);
         return sum + (existenciaFinal * (item.costoUnitario ?? 0));
-    }, 0).toFixed(2));
-    
-    
+    }, 0).toFixed(2);
 
     return {
         pageOrientation: 'landscape',
