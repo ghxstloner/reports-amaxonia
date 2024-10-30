@@ -48,8 +48,8 @@ export class BasicReportsService {
       "item.descripcion1 AS descripcion1",
       "item.costo_actual AS costoUnitario",
       `(SELECT COALESCE(SUM(
-          CASE WHEN subKardex.tipo_movimiento_almacen IN (:...tiposMovimientoEntrada) THEN subDetalle.cantidad
-               WHEN subKardex.tipo_movimiento_almacen IN (:...tiposMovimientoSalida) THEN -subDetalle.cantidad
+          CASE WHEN subKardex.tipo_movimiento_almacen IN (1, 3, 12) THEN subDetalle.cantidad
+               WHEN subKardex.tipo_movimiento_almacen IN (2, 4, 13) THEN -subDetalle.cantidad
                ELSE 0
           END
       ), 0) 
@@ -63,11 +63,10 @@ export class BasicReportsService {
     .addGroupBy("item.referencia")
     .addGroupBy("item.descripcion1")
     .addGroupBy("item.costo_actual")
-    .setParameter("tiposMovimientoEntrada", tiposMovimientoEntrada)
-    .setParameter("tiposMovimientoSalida", tiposMovimientoSalida)
     .getRawMany();
 
-    logInfo(`Existencia Inicial Transacciones: ${JSON.stringify(existenciaInicialTransacciones)}`);
+  logInfo(`Resultados existenciaInicialTransacciones: ${JSON.stringify(existenciaInicialTransacciones)}`);
+
 
     const groupedData = {};
 
