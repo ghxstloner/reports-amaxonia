@@ -23,14 +23,20 @@ export async function getCOPtoBsRate(repository: Repository<Divisas>): Promise<n
   return result ? parseFloat(result.cambio_unico) : null;
 }
 
-export async function convertToBolivares(costo: number, monedaBase: number, tasasRepository: { usdToBs: Repository<TasasCambio>, copToBs: Repository<Divisas> }): Promise<number> {
+export async function convertToBolivares(
+  costo: number,
+  monedaBase: number,
+  tasasRepository: { usdToBs: Repository<TasasCambio>, copToBs: Repository<Divisas> }
+): Promise<number> {
   let tasa: number | null = null;
 
-  if(monedaBase === 20){
+  if (monedaBase === 20) {
+    // Si es peso colombiano, obtenemos la tasa de COP a BS y dividimos
     tasa = await getCOPtoBsRate(tasasRepository.copToBs);
+    return tasa ? costo / tasa : costo;
   } else {
+    // Si es dólar, obtenemos la tasa de USD a BS y multiplicamos
     tasa = await getUSDtoBSRate(tasasRepository.usdToBs);
+    return tasa ? costo * tasa : costo;
   }
-
-  return tasa ? costo * tasa : costo;
 }

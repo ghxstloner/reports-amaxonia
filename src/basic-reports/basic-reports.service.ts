@@ -29,7 +29,7 @@ export class BasicReportsService {
   
     const tiposMovimientoEntrada = [1, 3, 12];
     const tiposMovimientoSalida = [2, 4, 13];
-    
+  
     const existenciaInicialTransacciones = await kardexRepository
       .createQueryBuilder("kardexAlmacen")
       .leftJoin("kardexAlmacen.detalle", "detalle")
@@ -61,37 +61,33 @@ export class BasicReportsService {
       .setParameter("tiposMovimientoEntrada", tiposMovimientoEntrada)
       .setParameter("tiposMovimientoSalida", tiposMovimientoSalida)
       .getRawMany();
-    
+  
     const groupedData = {};
-
+  
     for (const item of existenciaInicialTransacciones) {
       const idItem = item.idItem;
-    
-      if (!groupedData[idItem]) {
-        const costoUnitarioBs = await convertToBolivares(
-          parseFloat(item.costoUnitario), 
-          item.idMonedaBase, 
-          { usdToBs: tasasCambioRepository, copToBs: divisasRepository }
-        );
-    
-        groupedData[idItem] = {
-          codigo: item.codigo,
-          descripcion1: item.descripcion1,
-          existenciaInicial: item.existenciaInicial,
-          cantidadEntrada: 0.00,
-          montoEntrada: 0.00,
-          cantidadSalida: 0.00,
-          montoSalida: 0.00,
-          cantidadExistencia: 0.00,
-          existenciaFinal: 0.00,
-          cantidadConsumo: 0.00,
-          montoConsumo: 0.00, 
-          costoUnitario: costoUnitarioBs || 0.00,
-        };
-      }
+      const costoUnitarioBs = await convertToBolivares(
+        parseFloat(item.costoUnitario), 
+        item.idMonedaBase, 
+        { usdToBs: tasasCambioRepository, copToBs: divisasRepository }
+      );
+  
+      groupedData[idItem] = {
+        codigo: item.codigo,
+        descripcion1: item.descripcion1,
+        existenciaInicial: item.existenciaInicial,
+        cantidadEntrada: 0.00,
+        montoEntrada: 0.00,
+        cantidadSalida: 0.00,
+        montoSalida: 0.00,
+        cantidadExistencia: 0.00,
+        existenciaFinal: 0.00,
+        cantidadConsumo: 0.00,
+        montoConsumo: 0.00, 
+        costoUnitario: costoUnitarioBs || 0.00,
+      };
     }
-    
-
+  
     const transacciones = await kardexRepository
       .createQueryBuilder("kardexAlmacen")
       .leftJoinAndSelect("kardexAlmacen.detalle", "detalle")
@@ -111,11 +107,11 @@ export class BasicReportsService {
       .where("kardexAlmacen.fecha BETWEEN :start AND :end", { start: fechaInicio, end: fechaFin })
       .andWhere("kardexAlmacen.tipo_movimiento_almacen IN (:...tipos)", { tipos: [...tiposMovimientoEntrada, ...tiposMovimientoSalida] })
       .getMany();
-
+  
     for (const transaccion of transacciones) {
       for (const detalle of transaccion.detalle) {
         const key = detalle.item.id_item;
-
+  
         if (!groupedData[key]) {
           groupedData[key] = {
             codigo: detalle.item.referencia,
@@ -131,48 +127,46 @@ export class BasicReportsService {
             existenciaFinal: 0
           };
         }
-
+  
         const cantidad = detalle.cantidad || 0;
         const costo = parseFloat(detalle.costo) || 0;
-        
+  
         if (tiposMovimientoEntrada.includes(transaccion.tipo_movimiento_almacen)) {
-            groupedData[key].cantidadEntrada += cantidad;
-            groupedData[key].montoEntrada += costo;
+          groupedData[key].cantidadEntrada += cantidad;
+          groupedData[key].montoEntrada += costo;
         }
-        
-
+  
         if (tiposMovimientoSalida.includes(transaccion.tipo_movimiento_almacen)) {
           groupedData[key].cantidadSalida += cantidad;
-      
+  
           if (transaccion.tipo_movimiento_almacen === 2) {
-              const facturaDetalles = await manager
-                  .getRepository(FacturaDetalle)
-                  .createQueryBuilder("facturaDetalle")
-                  .select("facturaDetalle._item_totalconiva", "_item_totalconiva")
-                  .where("facturaDetalle.id_factura = :idDocumento", { idDocumento: transaccion.id_documento })
-                  .andWhere("facturaDetalle.id_item = :idItem", { idItem: detalle.item.id_item })
-                  .getRawMany();
-      
-              const totalConIva = facturaDetalles.reduce((sum, rawDetalle) => {
-                  const itemTotal = parseFloat(rawDetalle._item_totalconiva);
-                  return sum + (isNaN(itemTotal) ? 0 : itemTotal);
-              }, 0);
-      
-              groupedData[key].montoSalida += parseFloat(totalConIva.toFixed(2));
+            const facturaDetalles = await manager
+              .getRepository(FacturaDetalle)
+              .createQueryBuilder("facturaDetalle")
+              .select("facturaDetalle._item_totalconiva", "_item_totalconiva")
+              .where("facturaDetalle.id_factura = :idDocumento", { idDocumento: transaccion.id_documento })
+              .andWhere("facturaDetalle.id_item = :idItem", { idItem: detalle.item.id_item })
+              .getRawMany();
+  
+            const totalConIva = facturaDetalles.reduce((sum, rawDetalle) => {
+              const itemTotal = parseFloat(rawDetalle._item_totalconiva);
+              return sum + (isNaN(itemTotal) ? 0 : itemTotal);
+            }, 0);
+  
+            groupedData[key].montoSalida += parseFloat(totalConIva.toFixed(2));
           } else if (transaccion.tipo_movimiento_almacen === 4) {
             groupedData[key].cantidadConsumo += cantidad;
             groupedData[key].montoConsumo += parseFloat((cantidad * groupedData[key].costoUnitario).toFixed(2));            
           } else if (transaccion.tipo_movimiento_almacen === 13) {
-              groupedData[key].montoSalida += parseFloat(costo.toFixed(2));
+            groupedData[key].montoSalida += parseFloat(costo.toFixed(2));
           }
-      }
-      
-
+        }
+  
         groupedData[key].existenciaFinal =
           groupedData[key].existenciaInicial + groupedData[key].cantidadEntrada - groupedData[key].cantidadSalida;
       }
     }
-
+  
     for (const key in groupedData) {
       const itemExistencia = await manager
         .getRepository('item_existencia_almacen')
@@ -180,10 +174,10 @@ export class BasicReportsService {
         .select("SUM(existencia.cantidad)", "cantidad")
         .where("existencia.id_item = :idItem", { idItem: groupedData[key].codigo })
         .getRawOne();
-
+  
       groupedData[key].cantidadExistencia = itemExistencia ? parseFloat(itemExistencia.cantidad) : 0.00;
     }
-    console.log("Contenido de groupedData antes de generar el reporte:", Object.values(groupedData));
+  
     return Object.values(groupedData);
   }
 
