@@ -622,4 +622,7 @@ export class Item {
 
     @Column({ name: 'id_familia_gob', type: 'int', nullable: true })
     id_familia_gob: number;
+
+    @Column({ name: 'id_moneda_base', type: 'int', default: 0 })
+    id_moneda_base: number;
 }

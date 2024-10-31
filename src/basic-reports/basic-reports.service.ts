@@ -5,13 +5,14 @@ import {
   KardexAlmacen,
   ParametrosGenerales,
   FacturaDetalle,
+  TasasCambio,
+  Divisas
 } from 'src/entities';
 import { PrinterService } from 'src/printer/printer.service';
-import { Not, IsNull, Between, In } from 'typeorm';
 import {
   getKardexReport
 } from 'src/reports'
-import { logInfo } from 'src/helpers';
+import { convertToBolivares } from 'src/helpers';
 
 @Injectable({ scope: Scope.REQUEST })
 export class BasicReportsService {
@@ -20,24 +21,15 @@ export class BasicReportsService {
     @Inject(REQUEST) private readonly req: Request,
   ) { }
 
-  async getFirstKardexAlmacen(): Promise<KardexAlmacen> {
-    const manager = this.req['dbConnection'];
-    const repository = manager.getRepository(KardexAlmacen);
-    const [firstRecord] = await repository.find({
-      order: { fecha: 'ASC' },
-      take: 1,
-    });
-    return firstRecord;
-  }
-
   async getKardexReport(fechaInicio: string, fechaFin: string) {
     const manager = this.req['dbConnection'];
     const kardexRepository = manager.getRepository(KardexAlmacen);
-
+    const tasasCambioRepository = manager.getRepository(TasasCambio);
+    const divisasRepository = manager.getRepository(Divisas);
+  
     const tiposMovimientoEntrada = [1, 3, 12];
     const tiposMovimientoSalida = [2, 4, 13];
     
-    // Ajustar inventario inicial hasta el día anterior a `fechaInicio`
     const existenciaInicialTransacciones = await kardexRepository
       .createQueryBuilder("kardexAlmacen")
       .leftJoin("kardexAlmacen.detalle", "detalle")
@@ -47,6 +39,7 @@ export class BasicReportsService {
         "item.referencia AS codigo",
         "item.descripcion1 AS descripcion1",
         "item.costo_actual AS costoUnitario",
+        "item.id_moneda_base AS idMonedaBase",
         `(SELECT COALESCE(SUM(
             CASE 
               WHEN subKardex.tipo_movimiento_almacen IN (:...tiposMovimientoEntrada) THEN subDetalle.cantidad
@@ -59,11 +52,11 @@ export class BasicReportsService {
           WHERE subKardex.fecha < :start AND subDetalle.id_item = detalle.id_item
         ) AS existenciaInicial`
       ])
-      // Eliminamos la condición de fecha en la consulta principal
       .groupBy("detalle.id_item")
       .addGroupBy("item.referencia")
       .addGroupBy("item.descripcion1")
       .addGroupBy("item.costo_actual")
+      .addGroupBy("item.id_moneda_base")
       .setParameter("start", fechaInicio)
       .setParameter("tiposMovimientoEntrada", tiposMovimientoEntrada)
       .setParameter("tiposMovimientoSalida", tiposMovimientoSalida)
@@ -73,24 +66,32 @@ export class BasicReportsService {
 
     for (const item of existenciaInicialTransacciones) {
       const idItem = item.idItem;
-
-      groupedData[idItem] = {
-        codigo: item.codigo,
-        descripcion1: item.descripcion1,
-        existenciaInicial: item.existenciaInicial,
-        cantidadEntrada: 0.00,
-        montoEntrada: 0.00,
-        cantidadSalida: 0.00,
-        montoSalida: 0.00,
-        cantidadExistencia: 0.00,
-        existenciaFinal: 0.00,
-        cantidadConsumo: 0.00,
-        montoConsumo: 0.00, 
-        costoUnitario: parseFloat(item.costoUnitario || 0),
-      };
+    
+      if (!groupedData[idItem]) {
+        const costoUnitarioBs = await convertToBolivares(
+          parseFloat(item.costoUnitario), 
+          item.idMonedaBase, 
+          { usdToBs: tasasCambioRepository, copToBs: divisasRepository }
+        );
+    
+        groupedData[idItem] = {
+          codigo: item.codigo,
+          descripcion1: item.descripcion1,
+          existenciaInicial: item.existenciaInicial,
+          cantidadEntrada: 0.00,
+          montoEntrada: 0.00,
+          cantidadSalida: 0.00,
+          montoSalida: 0.00,
+          cantidadExistencia: 0.00,
+          existenciaFinal: 0.00,
+          cantidadConsumo: 0.00,
+          montoConsumo: 0.00, 
+          costoUnitario: costoUnitarioBs || 0.00,
+        };
+      }
     }
+    
 
-    // El resto del código permanece igual
     const transacciones = await kardexRepository
       .createQueryBuilder("kardexAlmacen")
       .leftJoinAndSelect("kardexAlmacen.detalle", "detalle")
@@ -124,8 +125,8 @@ export class BasicReportsService {
             montoEntrada: 0.00,
             cantidadSalida: 0.00,
             montoSalida: 0.00,
-            cantidadConsumo: 0.00,  // Inicialización de cantidadConsumo
-            montoConsumo: 0.00,     // Inicialización de montoConsumo
+            cantidadConsumo: 0.00, 
+            montoConsumo: 0.00,
             cantidadExistencia: 0.00,
             existenciaFinal: 0
           };
@@ -182,10 +183,9 @@ export class BasicReportsService {
 
       groupedData[key].cantidadExistencia = itemExistencia ? parseFloat(itemExistencia.cantidad) : 0.00;
     }
-
+    console.log("Contenido de groupedData antes de generar el reporte:", Object.values(groupedData));
     return Object.values(groupedData);
   }
-
 
   async generateKardexPDFReport(data, fechaInicio: string, fechaFin: string) {
     const manager = this.req['dbConnection'];

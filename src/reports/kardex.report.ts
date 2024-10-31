@@ -81,8 +81,8 @@ export const getKardexReport = (options: KardexReportOptions): TDocumentDefiniti
                             { text: 'Código', fontSize: 8, bold: true },
                             { text: 'Descripción', fontSize: 8, bold: true },
                             { text: 'Cantidad', fontSize: 8, bold: true },
-                            { text: 'Costo UNI.', fontSize: 8, bold: true },
-                            { text: 'Mto. Total', fontSize: 8, bold: true },
+                            { text: 'Costo UNI.', fontSize: 8, bold: true, noWrap: true },
+                            { text: 'Mto. Total', fontSize: 8, bold: true, noWrap: true },
                             { text: 'Cantidad', fontSize: 8, bold: true },
                             { text: 'Monto', fontSize: 8, bold: true },
                             { text: 'Cantidad', fontSize: 8, bold: true },
@@ -90,7 +90,7 @@ export const getKardexReport = (options: KardexReportOptions): TDocumentDefiniti
                             { text: 'Cantidad', fontSize: 8, bold: true },
                             { text: 'Monto', fontSize: 8, bold: true },
                             { text: 'Cantidad', fontSize: 8, bold: true }, 
-                            { text: 'Costo UNI.', fontSize: 8, bold: true },
+                            { text: 'Costo UNI.', fontSize: 8, bold: true, noWrap: true },
                             { text: 'Mto. Total', fontSize: 8, bold: true },
                         ],
                         ...data.map(item => {
@@ -98,18 +98,18 @@ export const getKardexReport = (options: KardexReportOptions): TDocumentDefiniti
                             return [
                                 { text: item.codigo, fontSize: 7 },
                                 { text: item.descripcion1, fontSize: 7, bold: true },
-                                { text: (item.existenciaInicial ?? 0).toFixed(2), fontSize: 7 },                                                    // Cantidad Existencia Inicial
-                                { text: (item.costoUnitario ?? 0).toFixed(2), fontSize: 7, alignment: 'center' },                                   // Costo UNI. Existencia Inicial
-                                { text: ((item.existenciaInicial ?? 0) * (item.costoUnitario ?? 0)).toFixed(2), fontSize: 7, alignment: 'center' }, // Mto. Total Existencia Inicial
-                                { text: (item.cantidadEntrada ?? 0).toFixed(2), fontSize: 7 },                                                      // Cantidad Entrada
-                                { text: ((item.cantidadEntrada ?? 0) * (item.costoUnitario ?? 0)).toFixed(2), fontSize: 7, bold: true, alignment: 'center' }, // Monto Entrada
-                                { text: (item.cantidadSalida ?? 0).toFixed(2), fontSize: 7 },                                                       // Cantidad Salida
-                                { text: ((item.montoSalida ?? 0).toFixed(2)), fontSize: 7, bold: true, alignment: 'center' },                       // Monto Salida
-                                { text: (item.cantidadConsumo ?? 0).toFixed(2), fontSize: 7, alignment: 'center', bold: true },                     // Cantidad Autoconsumo
-                                { text: ((item.montoConsumo ?? 0).toFixed(2)), fontSize: 7, alignment: 'center', bold: true },                      // Monto Autoconsumo
-                                { text: existenciaFinal.toFixed(2), fontSize: 7 },                                                                  // Cantidad Existencia Final
-                                { text: (item.costoUnitario ?? 0).toFixed(2), fontSize: 7, alignment: 'center' },                                   // Costo UNI. Existencia Final
-                                { text: (existenciaFinal * (item.costoUnitario ?? 0)).toFixed(2), fontSize: 7, alignment: 'center' }                // Mto. Total Existencia Final
+                                { text: (item.existenciaInicial ?? 0).toFixed(2), fontSize: 7, alignment: 'center' },                                                       // Cantidad Existencia Inicial
+                                { text: (item.costoUnitario ?? 0).toFixed(2), fontSize: 7, alignment: 'center' },                                                           // Costo UNI. Existencia Inicial
+                                { text: ((item.existenciaInicial ?? 0) * (item.costoUnitario ?? 0)).toFixed(2), fontSize: 7, alignment: 'center', bold:true },              // Mto. Total Existencia Inicial
+                                { text: (item.cantidadEntrada ?? 0).toFixed(2), fontSize: 7, alignment: 'center' },                                                         // Cantidad Entrada
+                                { text: ((item.cantidadEntrada ?? 0) * (item.costoUnitario ?? 0)).toFixed(2), fontSize: 7, bold: true, alignment: 'center' },               // Monto Entrada
+                                { text: (item.cantidadSalida ?? 0).toFixed(2), fontSize: 7, alignment: 'center' },                                                          // Cantidad Salida
+                                { text: ((item.montoSalida ?? 0).toFixed(2)), fontSize: 7, bold: true, alignment: 'center' },                                               // Monto Salida
+                                { text: (item.cantidadConsumo ?? 0).toFixed(2), fontSize: 7, alignment: 'center' },                                                         // Cantidad Autoconsumo
+                                { text: ((item.montoConsumo ?? 0).toFixed(2)), fontSize: 7, alignment: 'center', bold: true },                                              // Monto Autoconsumo
+                                { text: existenciaFinal.toFixed(2), fontSize: 7, alignment: 'center' },                                                                     // Cantidad Existencia Final
+                                { text: (item.costoUnitario ?? 0).toFixed(2), fontSize: 7, alignment: 'center' },                                                           // Costo UNI. Existencia Final
+                                { text: (existenciaFinal * (item.costoUnitario ?? 0)).toFixed(2), fontSize: 7, alignment: 'center', bold:true }                             // Mto. Total Existencia Final
                             ];
                         }),
                         [

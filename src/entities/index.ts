@@ -5,3 +5,5 @@ export * from './item.entity';
 export * from './factura-detalle-entity';
 export * from './compra-detalle-entity';
 export * from './item-existencia-almacen-entity';
+export * from './tasas-cambio-entity';
+export * from './divisas-entity';

@@ -1,16 +1,10 @@
 import { Controller, Get, Query, Res } from '@nestjs/common';
 import { BasicReportsService } from './basic-reports.service';
-import { KardexAlmacen } from '../entities/kardex-almacen.entity';
 import { Response } from 'express';
 
 @Controller('basic-reports')
 export class BasicReportsController {
   constructor(private readonly basicReportsService: BasicReportsService) { }
-
-  @Get('kardex')
-  async getFirstKardexAlmacen(): Promise<KardexAlmacen> {
-    return this.basicReportsService.getFirstKardexAlmacen();
-  }
 
   @Get('kardex-report')
   async getKardexReport(
