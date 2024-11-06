@@ -25,7 +25,7 @@ interface HeaderOptions {
 }
 
 export const headerCustomSection = (options: HeaderOptions): Content => {
-    const { showDate = true, showFilterDate = false, startDate, endDate, companyParams } = options;
+    const { showDate = true, showFilterDate = false, title, subTitle, startDate, endDate, companyParams } = options;
 
     const headerCompanyParams: Content = {
         stack: [
@@ -36,6 +36,8 @@ export const headerCustomSection = (options: HeaderOptions): Content => {
         ],
         margin: [15, 10, 0, 0]
     };
+
+
 
     const headerDates: Content = showFilterDate ? {
         stack: [
@@ -64,14 +66,23 @@ export const headerCustomSection = (options: HeaderOptions): Content => {
         alignment: 'center'
     } : {text: ''};
 
+    const headerTitle: Content = title ? {
+        stack: [
+            { text: title, fontSize: 16, bold: true, alignment: 'center', margin: [-250, 20, 0, 4] },
+            { text: subTitle, fontSize: 11, italics: true, alignment: 'center', margin: [-250, 0, 0, 10] }
+        ]
+    } : null;
+    
+
     const headerDate: Content = showDate ? currentDate : { text: '' };
 
     return {
         columns: [
             { width: 'auto', stack: [headerCompanyParams] },
             { width: '*', stack: [headerDates] },
+            { width: '*', stack: [headerTitle] },
             { width: 'auto', stack: [headerDate] }
         ],
-        columnGap: 12
+        columnGap: 10
     };
 };

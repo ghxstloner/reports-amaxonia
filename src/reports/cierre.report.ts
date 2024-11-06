@@ -1,12 +1,20 @@
 import { TDocumentDefinitions } from "pdfmake/interfaces";
 import { headerCustomSection, footerSection } from "./sections";
 
+// Actualizamos la interfaz Factura
+interface Factura {
+    codFactura: string;
+    fechaFactura: string;
+    totalFactura: number;
+    formasDePago: { [key: string]: string }; // Montos por cada forma de pago
+}
+
 interface CierreReportItem {
     idCajaSecuencia: string;
     formasDePagoActivas: string[];
     fecha: string;
     tipo: string;
-    documento: string;
+    facturas: Factura[];
 }
 
 interface CierreReportOptions {
@@ -18,10 +26,12 @@ interface CierreReportOptions {
 
 export const getCierreReport = (options: CierreReportOptions): TDocumentDefinitions => {
     const { title, subTitle, data, companyParams } = options;
+    const reportData = Array.isArray(data) ? data[0] : data; 
 
+    const formasDePagoActivas = Array.isArray(reportData.formasDePagoActivas) ? reportData.formasDePagoActivas : [];
     const headerOptions = {
-        title: title ?? 'Cierre Report',
-        subTitle: subTitle ?? 'Reporte de Movimientos de Almacén',
+        title: title ?? 'Flujo de Caja Detallado',
+        subTitle: subTitle ?? 'Reporte de Movimientos de la Caja',
         showDate: true,
         showFilterDate: false,
         companyParams: typeof companyParams === 'string'
@@ -30,23 +40,68 @@ export const getCierreReport = (options: CierreReportOptions): TDocumentDefiniti
     };
 
     const fixedHeaders = [
-        { text: 'Fecha', fontSize: 8, bold: true },
-        { text: 'Tipo', fontSize: 8, bold: true },
-        { text: 'Documento', fontSize: 8, bold: true }
+        { text: 'Fecha', fontSize: 8, bold: true, alignment: 'center', border: [true, true, true, true] },
+        { text: 'Tipo', fontSize: 8, bold: true, alignment: 'center', border: [true, true, true, true] },
+        { text: 'Documento', fontSize: 8, bold: true, alignment: 'center', border: [true, true, true, true] },
+        { text: 'Total', fontSize: 8, bold: true, alignment: 'center', border: [true, true, true, true] }
     ];
-
-    const dynamicHeaders = data[0].formasDePagoActivas.map(forma => ({
-        text: forma, fontSize: 8, bold: true
+    
+    const dynamicHeaders = formasDePagoActivas.map(forma => ({
+        text: forma,
+        fontSize: 7,
+        bold: true,
+        alignment: 'center',
+        noWrap: false,
+        border: [true, true, true, true],
+        margin: [0, 2] 
     }));
 
     const allHeaders = [
         ...fixedHeaders,
-        ...data[0].formasDePagoActivas.map(forma => ({ text: forma, fontSize: 8, bold: true }))
+        ...dynamicHeaders
     ];
     
     const widths = [
-        '10%', '10%', '10%',
-        ...data[0].formasDePagoActivas.map(() => `${70 / data[0].formasDePagoActivas.length}%`)
+        '6%', '6%', '6%', '6%', 
+        ...formasDePagoActivas.map(() => '9.3%')
+    ];
+
+    const facturasData = reportData.facturas.map(factura => {
+        const fechaFormateada = new Date(factura.fechaFactura).toLocaleDateString('es-ES');
+
+        const fixedData = [
+            { text: fechaFormateada, fontSize: 8, alignment: 'center' },
+            { text: reportData.tipo, fontSize: 8, alignment: 'center' },
+            { text: factura.codFactura, fontSize: 8, alignment: 'center' },
+            { text: Number(factura.totalFactura).toFixed(2), fontSize: 8, alignment: 'center' }
+        ];
+
+        const dynamicData = formasDePagoActivas.map(forma => ({
+            text: factura.formasDePago[forma] || "0.00",
+            fontSize: 8,
+            alignment: 'center'
+        }));
+        
+        return [...fixedData, ...dynamicData];
+    });
+
+    const totalGeneral = reportData.facturas.reduce((sum, factura) => sum + Number(factura.totalFactura), 0);
+
+    const totalFormasDePago = formasDePagoActivas.map(forma =>
+        reportData.facturas.reduce((sum, factura) => sum + (parseFloat(factura.formasDePago[forma] || "0")), 0)
+    );
+    
+    const totalRow = [
+        { text: 'Totales', colSpan: 3, alignment: 'center', bold: true, fontSize: 8 }, 
+        {}, 
+        {}, 
+        { text: totalGeneral.toFixed(2), alignment: 'center', bold: true, fontSize: 8 },
+        ...totalFormasDePago.map(total => ({
+            text: total.toFixed(2),
+            alignment: 'center',
+            bold: true,
+            fontSize: 8
+        }))
     ];
 
     return {
@@ -65,20 +120,9 @@ export const getCierreReport = (options: CierreReportOptions): TDocumentDefiniti
                     headerRows: 2,
                     widths: widths,
                     body: [
-                        // Agregar encabezados
                         allHeaders,
-                        // Mapear datos
-                        ...data.map(item => {
-                            const fixedData = [
-                                { text: item.fecha ?? '', fontSize: 7 },
-                                { text: item.tipo ?? '', fontSize: 7, bold: true },
-                                { text: item.documento ?? '', fontSize: 7, bold: true },
-                            ];
-                        
-                            const dynamicData = item.formasDePagoActivas.map(() => ({ text: '', fontSize: 7, alignment: 'center' }));
-                        
-                            return [...fixedData, ...dynamicData];
-                        })
+                        ...facturasData,
+                        totalRow
                     ]
                 }
             }

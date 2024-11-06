@@ -22,10 +22,11 @@ export class BasicReportsController {
 
   @Get('cierre-report')
   async getReportCierre(
+      @Query('idCaja') idCaja: string,
       @Query('cajaSecuencia') cajaSecuencia: string,
       @Res() response: Response,
   ) {
-      const data = await this.basicReportsService.getCierreReport(cajaSecuencia);
+      const data = await this.basicReportsService.getCierreReport(idCaja, cajaSecuencia);
       const pdfDoc = await this.basicReportsService.generateCierrePDFReport(data);
       response.setHeader('Content-Type', 'application/pdf');
       pdfDoc.info.Title = "Reporte Cierre de Caja";

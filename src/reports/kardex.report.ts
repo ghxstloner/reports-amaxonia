@@ -43,8 +43,6 @@ export const getKardexReport = (options: KardexReportOptions): TDocumentDefiniti
             height: 612.28 
         },
         header: headerCustomSection({
-            title: title ?? 'Kardex Report',
-            subTitle: subTitle ?? 'Reporte de Movimientos de Almacén',
             startDate: startDate,
             endDate: endDate,
             companyParams: typeof companyParams === 'string'

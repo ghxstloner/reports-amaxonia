@@ -27,10 +27,10 @@ export class BasicReportsService {
     const kardexRepository = manager.getRepository(KardexAlmacen);
     const tasasCambioRepository = manager.getRepository(TasasCambio);
     const divisasRepository = manager.getRepository(Divisas);
-  
+
     const tiposMovimientoEntrada = [1, 3, 12];
     const tiposMovimientoSalida = [2, 4, 13];
-  
+
     const existenciaInicialTransacciones = await kardexRepository
       .createQueryBuilder("kardexAlmacen")
       .leftJoin("kardexAlmacen.detalle", "detalle")
@@ -62,17 +62,17 @@ export class BasicReportsService {
       .setParameter("tiposMovimientoEntrada", tiposMovimientoEntrada)
       .setParameter("tiposMovimientoSalida", tiposMovimientoSalida)
       .getRawMany();
-  
+
     const groupedData = {};
-  
+
     for (const item of existenciaInicialTransacciones) {
       const idItem = item.idItem;
       const costoUnitarioBs = await convertToBolivares(
-        parseFloat(item.costoUnitario), 
-        item.idMonedaBase, 
+        parseFloat(item.costoUnitario),
+        item.idMonedaBase,
         { usdToBs: tasasCambioRepository, copToBs: divisasRepository }
       );
-  
+
       groupedData[idItem] = {
         codigo: item.codigo,
         descripcion1: item.descripcion1,
@@ -84,11 +84,11 @@ export class BasicReportsService {
         cantidadExistencia: 0.00,
         existenciaFinal: 0.00,
         cantidadConsumo: 0.00,
-        montoConsumo: 0.00, 
+        montoConsumo: 0.00,
         costoUnitario: costoUnitarioBs || 0.00,
       };
     }
-  
+
     const transacciones = await kardexRepository
       .createQueryBuilder("kardexAlmacen")
       .leftJoinAndSelect("kardexAlmacen.detalle", "detalle")
@@ -108,11 +108,11 @@ export class BasicReportsService {
       .where("kardexAlmacen.fecha BETWEEN :start AND :end", { start: fechaInicio, end: fechaFin })
       .andWhere("kardexAlmacen.tipo_movimiento_almacen IN (:...tipos)", { tipos: [...tiposMovimientoEntrada, ...tiposMovimientoSalida] })
       .getMany();
-  
+
     for (const transaccion of transacciones) {
       for (const detalle of transaccion.detalle) {
         const key = detalle.item.id_item;
-  
+
         if (!groupedData[key]) {
           groupedData[key] = {
             codigo: detalle.item.referencia,
@@ -122,24 +122,24 @@ export class BasicReportsService {
             montoEntrada: 0.00,
             cantidadSalida: 0.00,
             montoSalida: 0.00,
-            cantidadConsumo: 0.00, 
+            cantidadConsumo: 0.00,
             montoConsumo: 0.00,
             cantidadExistencia: 0.00,
             existenciaFinal: 0
           };
         }
-  
+
         const cantidad = detalle.cantidad || 0;
         const costo = parseFloat(detalle.costo) || 0;
-  
+
         if (tiposMovimientoEntrada.includes(transaccion.tipo_movimiento_almacen)) {
           groupedData[key].cantidadEntrada += cantidad;
           groupedData[key].montoEntrada += costo;
         }
-  
+
         if (tiposMovimientoSalida.includes(transaccion.tipo_movimiento_almacen)) {
           groupedData[key].cantidadSalida += cantidad;
-  
+
           if (transaccion.tipo_movimiento_almacen === 2) {
             const facturaDetalles = await manager
               .getRepository(FacturaDetalle)
@@ -148,26 +148,26 @@ export class BasicReportsService {
               .where("facturaDetalle.id_factura = :idDocumento", { idDocumento: transaccion.id_documento })
               .andWhere("facturaDetalle.id_item = :idItem", { idItem: detalle.item.id_item })
               .getRawMany();
-  
+
             const totalConIva = facturaDetalles.reduce((sum, rawDetalle) => {
               const itemTotal = parseFloat(rawDetalle._item_totalconiva);
               return sum + (isNaN(itemTotal) ? 0 : itemTotal);
             }, 0);
-  
+
             groupedData[key].montoSalida += parseFloat(totalConIva.toFixed(2));
           } else if (transaccion.tipo_movimiento_almacen === 4) {
             groupedData[key].cantidadConsumo += cantidad;
-            groupedData[key].montoConsumo += parseFloat((cantidad * groupedData[key].costoUnitario).toFixed(2));            
+            groupedData[key].montoConsumo += parseFloat((cantidad * groupedData[key].costoUnitario).toFixed(2));
           } else if (transaccion.tipo_movimiento_almacen === 13) {
             groupedData[key].montoSalida += parseFloat(costo.toFixed(2));
           }
         }
-  
+
         groupedData[key].existenciaFinal =
           groupedData[key].existenciaInicial + groupedData[key].cantidadEntrada - groupedData[key].cantidadSalida;
       }
     }
-  
+
     for (const key in groupedData) {
       const itemExistencia = await manager
         .getRepository('item_existencia_almacen')
@@ -175,36 +175,11 @@ export class BasicReportsService {
         .select("SUM(existencia.cantidad)", "cantidad")
         .where("existencia.id_item = :idItem", { idItem: groupedData[key].codigo })
         .getRawOne();
-  
+
       groupedData[key].cantidadExistencia = itemExistencia ? parseFloat(itemExistencia.cantidad) : 0.00;
     }
-  
+
     return Object.values(groupedData);
-  }
-
-
-  async getCierreReport(cajaSecuencia: string) {
-    return [
-      {
-        titulo: 'Cierre de Caja',
-        cajaSecuencia: cajaSecuencia,
-        montoTotal: 0.00,
-        fecha: new Date().toLocaleDateString()
-      }
-    ];
-  }
-
-  async generateCierrePDFReport(data) {
-    const manager = this.req['dbConnection'];
-    const parametrosRepository = manager.getRepository(ParametrosGenerales);
-    const parametros = await parametrosRepository.findOneBy({});
-
-    const docDefinition = getCierreReport({
-      data,
-      companyParams: parametros
-    });
-
-    return this.printerService.createPdf(docDefinition);
   }
 
   async generateKardexPDFReport(data, fechaInicio: string, fechaFin: string) {
@@ -216,6 +191,97 @@ export class BasicReportsService {
       data,
       startDate: fechaInicio,
       endDate: fechaFin,
+      companyParams: parametros
+    });
+
+    return this.printerService.createPdf(docDefinition);
+  }
+
+
+  async getCierreReport(idCaja: string, cajaSecuencia: string) {
+    const manager = this.req['dbConnection'];
+
+    // Obtener las formas de pago activas
+    const formasDePagoActivas = await manager
+      .createQueryBuilder()
+      .select("cajaFormaPago.descripcion", "descripcion")
+      .from("caja_forma", "cajaForma")
+      .innerJoin("caja_forma_pago", "cajaFormaPago", "cajaForma.id_forma_pago = cajaFormaPago.id_forma_pago")
+      .where("cajaForma.id_caja = :idCaja", { idCaja })
+      .andWhere("cajaForma.activo = 1")
+      .getRawMany();
+
+    const formasDePagoActivasDescripciones = formasDePagoActivas.map(fp => fp.descripcion);
+
+    // Obtener las facturas y las formas de pago asociadas a cada factura
+    const facturas = await manager
+      .createQueryBuilder()
+      .select([
+        "F.cod_factura AS codFactura",
+        "F.fecha_creacion AS fechaFactura",
+        "F.totalTotalFactura AS totalFactura",
+        "cajaFormaPago.descripcion AS descripcionFormaPago",
+        "CD.monto AS monto",
+      ])
+      .from("factura", "F")
+      .leftJoin("caja_nueva", "CN", "CN.id_factura = F.id_factura")
+      .leftJoin("caja_nueva_detalle", "CD", "CD.caja_id = CN.caja_id")
+      .leftJoin("caja_forma_pago", "cajaFormaPago", "CD.id_forma_pago = cajaFormaPago.id_forma_pago")
+      .where("CN.id_caja_secuencia = :cajaSecuencia", { cajaSecuencia })
+      .andWhere("CD.id_forma_pago <> 30")
+      .getRawMany();
+
+    // Organizar los datos por factura y forma de pago
+    const facturasConFormasDePago = facturas.reduce((acc, curr) => {
+      let factura = acc.find(f => f.codFactura === curr.codFactura);
+      if (!factura) {
+        factura = {
+          codFactura: curr.codFactura,
+          fechaFactura: curr.fechaFactura,
+          totalFactura: curr.totalFactura,
+          formasDePago: {}
+        };
+        acc.push(factura);
+      }
+
+      // Asignar el monto al nombre descriptivo de la forma de pago
+      factura.formasDePago[curr.descripcionFormaPago] = curr.monto;
+
+      return acc;
+    }, []);
+
+    // Crear las facturas finales con las formas de pago activas y asignar "0.00" donde no haya monto
+    const facturasFinal = facturasConFormasDePago.map(factura => {
+      const formasDePago = formasDePagoActivasDescripciones.reduce((pagos, formaDePago) => {
+        pagos[formaDePago] = factura.formasDePago[formaDePago] || "0.00";
+        return pagos;
+      }, {});
+
+      return {
+        codFactura: factura.codFactura,
+        fechaFactura: factura.fechaFactura,
+        totalFactura: factura.totalFactura,
+        formasDePago: formasDePago
+      };
+    });
+
+    return {
+      idCajaSecuencia: cajaSecuencia,
+      formasDePagoActivas: formasDePagoActivasDescripciones,
+      fecha: new Date().toLocaleDateString(),
+      tipo: 'Venta',
+      facturas: facturasFinal
+    };
+  }
+
+
+  async generateCierrePDFReport(data) {
+    const manager = this.req['dbConnection'];
+    const parametrosRepository = manager.getRepository(ParametrosGenerales);
+    const parametros = await parametrosRepository.findOneBy({});
+
+    const docDefinition = getCierreReport({
+      data,
       companyParams: parametros
     });
 
