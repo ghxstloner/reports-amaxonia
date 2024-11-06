@@ -13,6 +13,7 @@ interface HeaderOptions {
     title?: string;
     subTitle?: string;
     showDate?: boolean;
+    showFilterDate?: boolean;
     startDate?: string;
     endDate?: string;
     companyParams?: {
@@ -24,7 +25,7 @@ interface HeaderOptions {
 }
 
 export const headerCustomSection = (options: HeaderOptions): Content => {
-    const { showDate = true, startDate, endDate, companyParams } = options;
+    const { showDate = true, showFilterDate = false, startDate, endDate, companyParams } = options;
 
     const headerCompanyParams: Content = {
         stack: [
@@ -36,7 +37,7 @@ export const headerCustomSection = (options: HeaderOptions): Content => {
         margin: [15, 10, 0, 0]
     };
 
-    const headerDates: Content = {
+    const headerDates: Content = showFilterDate ? {
         stack: [
             { 
                 text:  null, 
@@ -61,7 +62,7 @@ export const headerCustomSection = (options: HeaderOptions): Content => {
             }
         ],
         alignment: 'center'
-    };
+    } : {text: ''};
 
     const headerDate: Content = showDate ? currentDate : { text: '' };
 

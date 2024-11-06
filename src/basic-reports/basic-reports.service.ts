@@ -10,7 +10,8 @@ import {
 } from 'src/entities';
 import { PrinterService } from 'src/printer/printer.service';
 import {
-  getKardexReport
+  getKardexReport,
+  getCierreReport
 } from 'src/reports'
 import { convertToBolivares } from 'src/helpers';
 
@@ -179,6 +180,31 @@ export class BasicReportsService {
     }
   
     return Object.values(groupedData);
+  }
+
+
+  async getCierreReport(cajaSecuencia: string) {
+    return [
+      {
+        titulo: 'Cierre de Caja',
+        cajaSecuencia: cajaSecuencia,
+        montoTotal: 0.00,
+        fecha: new Date().toLocaleDateString()
+      }
+    ];
+  }
+
+  async generateCierrePDFReport(data) {
+    const manager = this.req['dbConnection'];
+    const parametrosRepository = manager.getRepository(ParametrosGenerales);
+    const parametros = await parametrosRepository.findOneBy({});
+
+    const docDefinition = getCierreReport({
+      data,
+      companyParams: parametros
+    });
+
+    return this.printerService.createPdf(docDefinition);
   }
 
   async generateKardexPDFReport(data, fechaInicio: string, fechaFin: string) {

@@ -50,7 +50,8 @@ export const getKardexReport = (options: KardexReportOptions): TDocumentDefiniti
             companyParams: typeof companyParams === 'string'
                 ? { nombre_empresa: 'Nombre de la Empresa', direccion: 'Dirección', telefonos: 'Teléfono', rif: 'RIF' }
                 : companyParams,
-            showDate: true
+            showDate: true,
+            showFilterDate: true
         }),
         footer: footerSection,
         pageMargins: [20, 80, 20, 60],
