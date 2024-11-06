@@ -200,8 +200,7 @@ export class BasicReportsService {
 
   async getCierreReport(idCaja: string, cajaSecuencia: string) {
     const manager = this.req['dbConnection'];
-
-    // Obtener las formas de pago activas
+  
     const formasDePagoActivas = await manager
       .createQueryBuilder()
       .select("cajaFormaPago.descripcion", "descripcion")
@@ -210,18 +209,19 @@ export class BasicReportsService {
       .where("cajaForma.id_caja = :idCaja", { idCaja })
       .andWhere("cajaForma.activo = 1")
       .getRawMany();
-
+  
     const formasDePagoActivasDescripciones = formasDePagoActivas.map(fp => fp.descripcion);
-
-    // Obtener las facturas y las formas de pago asociadas a cada factura
+  
     const facturas = await manager
       .createQueryBuilder()
       .select([
         "F.cod_factura AS codFactura",
+        "F.id_factura AS idFactura",
         "F.fecha_creacion AS fechaFactura",
         "F.totalTotalFactura AS totalFactura",
         "cajaFormaPago.descripcion AS descripcionFormaPago",
         "CD.monto AS monto",
+        "CD.id_forma_pago AS idFormaPago"
       ])
       .from("factura", "F")
       .leftJoin("caja_nueva", "CN", "CN.id_factura = F.id_factura")
@@ -230,41 +230,73 @@ export class BasicReportsService {
       .where("CN.id_caja_secuencia = :cajaSecuencia", { cajaSecuencia })
       .andWhere("CD.id_forma_pago <> 30")
       .getRawMany();
-
-    // Organizar los datos por factura y forma de pago
-    const facturasConFormasDePago = facturas.reduce((acc, curr) => {
-      let factura = acc.find(f => f.codFactura === curr.codFactura);
-      if (!factura) {
-        factura = {
-          codFactura: curr.codFactura,
-          fechaFactura: curr.fechaFactura,
-          totalFactura: curr.totalFactura,
-          formasDePago: {}
-        };
-        acc.push(factura);
-      }
-
-      // Asignar el monto al nombre descriptivo de la forma de pago
-      factura.formasDePago[curr.descripcionFormaPago] = curr.monto;
-
-      return acc;
-    }, []);
-
-    // Crear las facturas finales con las formas de pago activas y asignar "0.00" donde no haya monto
+  
+    const facturaFormasCambio = await manager
+      .createQueryBuilder()
+      .select(["FFC.id_factura", "FFC.id_divisa", "FFC.monto"])
+      .from("factura_forma_cambio", "FFC")
+      .innerJoin("factura", "F", "F.id_factura = FFC.id_factura")
+      .where("FFC.id_divisa IN (:...divisas)", { divisas: [14, 15, 20] })
+      .andWhere("F.id_caja_secuencia = :cajaSecuencia", { cajaSecuencia })
+      .getRawMany();
+  
+      const facturaCambioMap = facturaFormasCambio.reduce((map, item) => {
+        if (!map[item.id_factura]) map[item.id_factura] = {};
+      
+        switch (item.id_divisa) {
+          case 14:
+            map[item.id_factura][15] = -Math.abs(item.monto); // Efectivo Bs.
+            break;
+          case 15:
+            map[item.id_factura][67] = -Math.abs(item.monto); // Divisa $
+            break;
+          case 20:
+            map[item.id_factura][74] = -Math.abs(item.monto); // Peso Colombiano
+            break;
+        }
+        return map;
+      }, {});
+      
+  
+      const facturasConFormasDePago = facturas.reduce((acc, curr) => {
+        let factura = acc.find(f => f.codFactura === curr.codFactura);
+        if (!factura) {
+          factura = {
+            codFactura: curr.codFactura,
+            fechaFactura: curr.fechaFactura,
+            totalFactura: curr.totalFactura,
+            formasDePago: {}
+          };
+          acc.push(factura);
+        }
+      
+        const idFormaPago = parseInt(curr.idFormaPago);
+        const montoOriginal = parseFloat(curr.monto);
+      
+        const ajusteDivisa = facturaCambioMap[curr.idFactura] && facturaCambioMap[curr.idFactura][idFormaPago];
+      
+        factura.formasDePago[curr.descripcionFormaPago] = ajusteDivisa !== undefined
+          ? montoOriginal + ajusteDivisa
+          : montoOriginal;
+      
+        return acc;
+      }, []);
+      
+  
     const facturasFinal = facturasConFormasDePago.map(factura => {
       const formasDePago = formasDePagoActivasDescripciones.reduce((pagos, formaDePago) => {
         pagos[formaDePago] = factura.formasDePago[formaDePago] || "0.00";
         return pagos;
       }, {});
-
+  
       return {
         codFactura: factura.codFactura,
         fechaFactura: factura.fechaFactura,
         totalFactura: factura.totalFactura,
-        formasDePago: formasDePago
+        formasDePago
       };
     });
-
+  
     return {
       idCajaSecuencia: cajaSecuencia,
       formasDePagoActivas: formasDePagoActivasDescripciones,

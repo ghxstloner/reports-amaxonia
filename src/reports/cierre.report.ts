@@ -1,12 +1,11 @@
 import { TDocumentDefinitions } from "pdfmake/interfaces";
 import { headerCustomSection, footerSection } from "./sections";
 
-// Actualizamos la interfaz Factura
 interface Factura {
     codFactura: string;
     fechaFactura: string;
     totalFactura: number;
-    formasDePago: { [key: string]: string }; // Montos por cada forma de pago
+    formasDePago: { [key: string]: string };
 }
 
 interface CierreReportItem {
@@ -77,7 +76,7 @@ export const getCierreReport = (options: CierreReportOptions): TDocumentDefiniti
         ];
 
         const dynamicData = formasDePagoActivas.map(forma => ({
-            text: factura.formasDePago[forma] || "0.00",
+            text: parseFloat(factura.formasDePago[forma] || "0").toFixed(2),
             fontSize: 8,
             alignment: 'center'
         }));
