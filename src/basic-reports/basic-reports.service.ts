@@ -198,8 +198,17 @@ export class BasicReportsService {
   }
 
 
-  async getCierreReport(idCaja: string, cajaSecuencia: string) {
+  async getCierreReport(cajaSecuencia: string) {
     const manager = this.req['dbConnection'];
+
+    const caja = await manager
+    .createQueryBuilder()
+    .select("id_caja")
+    .from("caja_secuencia", "CS")
+    .where("CS.id = :cajaSecuencia", { cajaSecuencia })
+    .getRawOne();
+
+    const idCaja = caja ? caja.id_caja : null;
   
     const formasDePagoActivas = await manager
       .createQueryBuilder()
