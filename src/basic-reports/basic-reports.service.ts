@@ -202,34 +202,38 @@ export class BasicReportsService {
     const manager = this.req['dbConnection'];
 
     const caja = await manager
-    .createQueryBuilder()
-    .select("id_caja")
-    .from("caja_secuencia", "CS")
-    .where("CS.id = :cajaSecuencia", { cajaSecuencia })
-    .getRawOne();
+      .createQueryBuilder()
+      .select("id_caja")
+      .from("caja_secuencia", "CS")
+      .where("CS.id = :cajaSecuencia", { cajaSecuencia })
+      .getRawOne();
 
     const idCaja = caja ? caja.id_caja : null;
-  
+
     const formasDePagoActivas = await manager
       .createQueryBuilder()
       .select("cajaFormaPago.descripcion", "descripcion")
+      .addSelect("cajaFormaPago.id_forma_pago", "id_forma_pago")
       .from("caja_forma", "cajaForma")
       .innerJoin("caja_forma_pago", "cajaFormaPago", "cajaForma.id_forma_pago = cajaFormaPago.id_forma_pago")
       .where("cajaForma.id_caja = :idCaja", { idCaja })
       .andWhere("cajaForma.activo = 1")
       .getRawMany();
-  
-    const formasDePagoActivasDescripciones = formasDePagoActivas.map(fp => fp.descripcion);
-  
+
+    const formasDePagoActivasMap = formasDePagoActivas.reduce((map, forma) => {
+      map[forma.id_forma_pago] = forma.descripcion;
+      return map;
+    }, {} as Record<number, string>);
+
     const facturas = await manager
       .createQueryBuilder()
       .select([
         "F.cod_factura AS codFactura",
         "F.id_factura AS idFactura",
         "F.fecha_creacion AS fechaFactura",
-        "F.totalTotalFactura AS totalFactura",
+        "F.totalizar_total_general AS totalFactura",
         "cajaFormaPago.descripcion AS descripcionFormaPago",
-        "CD.monto AS monto",
+        "CD.monto_recibido AS monto",
         "CD.id_forma_pago AS idFormaPago"
       ])
       .from("factura", "F")
@@ -239,65 +243,77 @@ export class BasicReportsService {
       .where("CN.id_caja_secuencia = :cajaSecuencia", { cajaSecuencia })
       .andWhere("CD.id_forma_pago <> 30")
       .getRawMany();
-  
+
     const facturaFormasCambio = await manager
       .createQueryBuilder()
-      .select(["FFC.id_factura", "FFC.id_divisa", "FFC.monto"])
+      .select([
+        "FFC.id_factura",
+        "CASE " +
+        "WHEN FFC.id_divisa = 14 THEN 15 " +    // Si es Bolivar, devuelve 15 (Efectivo Bs.)
+        "WHEN FFC.id_divisa = 15 THEN 67 " +    // Si es Dólar, devuelve 67 (Divisa $)
+        "WHEN FFC.id_divisa = 20 THEN 74 " +    // Si es Peso Colombiano, devuelve 74 (Peso Colombiano EFEC)
+        "ELSE FFC.id_divisa END AS id_forma_pago",
+        "FFC.monto"
+      ])
       .from("factura_forma_cambio", "FFC")
       .innerJoin("factura", "F", "F.id_factura = FFC.id_factura")
       .where("FFC.id_divisa IN (:...divisas)", { divisas: [14, 15, 20] })
       .andWhere("F.id_caja_secuencia = :cajaSecuencia", { cajaSecuencia })
       .getRawMany();
-  
-      const facturaCambioMap = facturaFormasCambio.reduce((map, item) => {
-        if (!map[item.id_factura]) map[item.id_factura] = {};
-      
-        switch (item.id_divisa) {
-          case 14:
-            map[item.id_factura][15] = -Math.abs(item.monto); // Efectivo Bs.
-            break;
-          case 15:
-            map[item.id_factura][67] = -Math.abs(item.monto); // Divisa $
-            break;
-          case 20:
-            map[item.id_factura][74] = -Math.abs(item.monto); // Peso Colombiano
-            break;
+
+    const facturaCambioMap = facturaFormasCambio.reduce((map, item) => {
+      if (!map[item.id_factura]) map[item.id_factura] = {};
+      map[item.id_factura][item.id_forma_pago] = -Math.abs(item.monto);
+      return map;
+    }, {} as Record<string, Record<number, number>>);
+
+    const facturasConFormasDePago = facturas.reduce((acc, curr) => {
+      let factura = acc.find(f => f.codFactura === curr.codFactura);
+
+      if (!factura) {
+        factura = {
+          codFactura: curr.codFactura,
+          fechaFactura: curr.fechaFactura,
+          totalFactura: curr.totalFactura,
+          ajusteAplicado: false,
+          formasDePago: Object.keys(formasDePagoActivasMap).reduce((pagos, idFormaPago) => {
+            pagos[formasDePagoActivasMap[parseInt(idFormaPago)]] = 0;
+            return pagos;
+          }, {} as Record<string, number>),
+        };
+        acc.push(factura);
+      }
+
+      const idFormaPago = curr.idFormaPago ? curr.idFormaPago.toString() : null;
+      const montoOriginal = curr.monto ? parseFloat(curr.monto) : 0.0;
+
+      if (!factura.ajusteAplicado) {
+        const ajusteDivisa = facturaCambioMap[curr.idFactura];
+        if (ajusteDivisa) {
+          for (const [idFormaPagoAjuste, montoAjuste] of Object.entries(ajusteDivisa)) {
+            const descripcionFormaPagoAjuste = formasDePagoActivasMap[parseInt(idFormaPagoAjuste)];
+            if (descripcionFormaPagoAjuste) {
+              factura.formasDePago[descripcionFormaPagoAjuste] += montoAjuste;
+            }
+          }
         }
-        return map;
-      }, {});
-      
-  
-      const facturasConFormasDePago = facturas.reduce((acc, curr) => {
-        let factura = acc.find(f => f.codFactura === curr.codFactura);
-        if (!factura) {
-          factura = {
-            codFactura: curr.codFactura,
-            fechaFactura: curr.fechaFactura,
-            totalFactura: curr.totalFactura,
-            formasDePago: {}
-          };
-          acc.push(factura);
-        }
-      
-        const idFormaPago = parseInt(curr.idFormaPago);
-        const montoOriginal = parseFloat(curr.monto);
-      
-        const ajusteDivisa = facturaCambioMap[curr.idFactura] && facturaCambioMap[curr.idFactura][idFormaPago];
-      
-        factura.formasDePago[curr.descripcionFormaPago] = ajusteDivisa !== undefined
-          ? montoOriginal + ajusteDivisa
-          : montoOriginal;
-      
-        return acc;
-      }, []);
-      
-  
+        factura.ajusteAplicado = true;
+      }
+
+      factura.formasDePago[curr.descripcionFormaPago] += montoOriginal;
+
+      return acc;
+    }, []);
+
+
+
     const facturasFinal = facturasConFormasDePago.map(factura => {
-      const formasDePago = formasDePagoActivasDescripciones.reduce((pagos, formaDePago) => {
-        pagos[formaDePago] = factura.formasDePago[formaDePago] || "0.00";
+      const formasDePago = Object.keys(formasDePagoActivasMap).reduce((pagos, idFormaPago) => {
+        const descripcion = formasDePagoActivasMap[parseInt(idFormaPago)];
+        pagos[descripcion] = factura.formasDePago[descripcion] || "0.00";
         return pagos;
-      }, {});
-  
+      }, {} as Record<string, string>);
+
       return {
         codFactura: factura.codFactura,
         fechaFactura: factura.fechaFactura,
@@ -305,16 +321,15 @@ export class BasicReportsService {
         formasDePago
       };
     });
-  
+
     return {
       idCajaSecuencia: cajaSecuencia,
-      formasDePagoActivas: formasDePagoActivasDescripciones,
+      formasDePagoActivas: Object.values(formasDePagoActivasMap),
       fecha: new Date().toLocaleDateString(),
       tipo: 'Venta',
       facturas: facturasFinal
     };
   }
-
 
   async generateCierrePDFReport(data) {
     const manager = this.req['dbConnection'];
