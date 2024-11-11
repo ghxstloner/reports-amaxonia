@@ -231,7 +231,7 @@ export class BasicReportsService {
         "F.cod_factura AS codFactura",
         "F.id_factura AS idFactura",
         "F.fecha_creacion AS fechaFactura",
-        "F.totalizar_total_general AS totalFactura",
+        "F.TotalTotalFactura AS totalFactura",
         "cajaFormaPago.descripcion AS descripcionFormaPago",
         "CD.monto_recibido AS monto",
         "CD.id_forma_pago AS idFormaPago"
