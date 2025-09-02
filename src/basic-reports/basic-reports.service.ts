@@ -225,9 +225,10 @@ export class BasicReportsService {
       return map;
     }, {} as Record<number, string>);
 
-    const facturas = await manager
+    const facturasDefault = await manager
       .createQueryBuilder()
       .select([
+        "'FACT' factura_tipo",
         "F.cod_factura AS codFactura",
         "F.id_factura AS idFactura",
         "F.fecha_creacion AS fechaFactura",
@@ -243,6 +244,27 @@ export class BasicReportsService {
       .where("CN.id_caja_secuencia = :cajaSecuencia", { cajaSecuencia })
       .andWhere("CD.id_forma_pago <> 30")
       .getRawMany();
+
+    const facturasNotaCredito = await manager
+      .createQueryBuilder()
+      .select([
+        "'NC' factura_tipo",
+        "FD.cod_devolucion AS codFactura",
+        "FD.cod_factura AS idFactura",
+        "FD.fecha_creacion AS fechaFactura",
+        "FD.total * -1 AS totalFactura",
+        "cajaFormaPago.descripcion AS descripcionFormaPago",
+        "CD.monto_recibido * -1 AS monto",
+        "CD.id_forma_pago AS idFormaPago"
+      ])
+      .from("factura_devolucion", "FD")
+      .leftJoin("caja_nueva", "CN", "CN.id_factura = FD.cod_factura")
+      .leftJoin("caja_nueva_detalle", "CD", "CD.caja_id = CN.caja_id")
+      .leftJoin("caja_forma_pago", "cajaFormaPago", "CD.id_forma_pago = cajaFormaPago.id_forma_pago")
+      .where("CN.id_caja_secuencia = :cajaSecuencia", { cajaSecuencia })
+      .getRawMany();
+
+    const facturas = [...facturasDefault, ...facturasNotaCredito]
 
     const facturaFormasCambio = await manager
       .createQueryBuilder()
