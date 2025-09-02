@@ -70,7 +70,7 @@ export const getCierreReport = (options: CierreReportOptions): TDocumentDefiniti
 
         const fixedData = [
             { text: fechaFormateada, fontSize: 8, alignment: 'center' },
-            { text: reportData.tipo, fontSize: 8, alignment: 'center' },
+            { text: factura.totalFactura > 0 ? 'Venta' : 'Nota de Credito', fontSize: 8, alignment: 'center' },
             { text: factura.codFactura, fontSize: 8, alignment: 'center' },
             { text: Number(factura.totalFactura).toFixed(2), fontSize: 8, alignment: 'center' }
         ];
