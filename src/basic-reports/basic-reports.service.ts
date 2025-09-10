@@ -264,7 +264,31 @@ export class BasicReportsService {
       .where("CN.id_caja_secuencia = :cajaSecuencia", { cajaSecuencia })
       .getRawMany();
 
-    const facturas = [...facturasDefault, ...facturasNotaCredito]
+      const facturasLista = [...facturasDefault, ...facturasNotaCredito]
+
+      const reordenarFacturas = (listaFactura) => {
+        const facturasMap = new Map();
+        const resultado = [];
+          
+        // Agrupar por codFactura
+        for (const factura of listaFactura) {
+          const cod = factura.codFactura;
+          if (!facturasMap.has(cod)) facturasMap.set(cod, []);
+          facturasMap.get(cod).push(factura);
+        }
+      
+        // Reordenar: FACT primero, luego NC
+        for (const [cod, grupo] of facturasMap.entries()) {
+          const fact = grupo.filter(f => f.factura_tipo === 'FACT');
+          const nc = grupo.filter(f => f.factura_tipo === 'NC');
+          resultado.push(...fact, ...nc);
+        }
+      
+        return resultado;
+      }
+
+      const facturasOrdenadas = reordenarFacturas(facturasLista);
+      const facturas = facturasOrdenadas     
 
     const facturaFormasCambio = await manager
       .createQueryBuilder()
@@ -290,7 +314,8 @@ export class BasicReportsService {
     }, {} as Record<string, Record<number, number>>);
 
     const facturasConFormasDePago = facturas.reduce((acc, curr) => {
-      let factura = acc.find(f => f.codFactura === curr.codFactura);
+      //let factura = acc.find(f => f.codFactura === curr.codFactura);
+      let factura = acc.codFactura;
 
       if (!factura) {
         factura = {
