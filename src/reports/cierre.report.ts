@@ -122,9 +122,9 @@ export const getCierreReport = (options: CierreReportOptions): TDocumentDefiniti
                         allHeaders,
                         ...facturasData,
                         totalRow
-                    ]
+                    ] as any
                 }
-            }
+            } as any
         ]
     };
 };

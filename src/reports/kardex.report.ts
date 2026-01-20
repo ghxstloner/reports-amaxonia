@@ -125,9 +125,9 @@ export const getKardexReport = (options: KardexReportOptions): TDocumentDefiniti
                             {},
                             { text: totalExistenciaFinal, fontSize: 7, alignment: 'center', bold: true }  // Total Monto Existencia Final
                         ]
-                    ]
+                    ] as any
                 }
-            }
+            } as any
         ]
     };
 };
