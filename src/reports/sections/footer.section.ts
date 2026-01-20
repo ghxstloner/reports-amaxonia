@@ -15,7 +15,7 @@ export const footerSection = (
             x2: 967.12,
             y2: 0,
             lineWidth: 2,
-            lineColor: '#2563EB',
+                    lineColor: '#FF613F',
           },
         ],
         margin: [20, 0, 20, 5],
@@ -26,7 +26,7 @@ export const footerSection = (
         margin: [0, 0, 40, 20],
         fontSize: 10,
         bold: true,
-        color: '#1E40AF',
+                color: '#2F3A4B',
       },
     ],
   };

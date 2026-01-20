@@ -7,7 +7,7 @@ const currentDate: Content = {
   margin: [0, 15, 20, 0],
   fontSize: 10,
   italics: true,
-  color: '#4B5563',
+  color: '#2F3A4B',
   bold: true,
 };
 
@@ -44,7 +44,7 @@ export const headerCustomSection = (options: HeaderOptions): Content => {
         fontSize: 13,
         bold: true,
         alignment: 'left',
-        color: '#1E40AF',
+        color: '#2F3A4B',
       },
       {
         text: companyParams?.direccion ?? 'Dirección de la Empresa',
@@ -93,7 +93,7 @@ export const headerCustomSection = (options: HeaderOptions): Content => {
             alignment: 'center',
             fontSize: 10,
             margin: [0, 0, 0, 10],
-            color: '#1E40AF',
+            color: '#FF613F',
             bold: true,
           },
         ],
@@ -109,15 +109,15 @@ export const headerCustomSection = (options: HeaderOptions): Content => {
             fontSize: 17,
             bold: true,
             alignment: 'center',
-            margin: [-250, 20, 0, 4],
-            color: '#1E40AF',
+            margin: [-280, 20, 0, 4],
+            color: '#FF613F',
           },
           {
             text: subTitle,
             fontSize: 11,
             italics: true,
             alignment: 'center',
-            margin: [-250, 0, 0, 10],
+            margin: [-280, 0, 0, 10],
             color: '#4B5563',
           },
         ],
@@ -127,30 +127,12 @@ export const headerCustomSection = (options: HeaderOptions): Content => {
   const headerDate: Content = showDate ? currentDate : { text: '' };
 
   return {
-    stack: [
-      {
-        canvas: [
-          {
-            type: 'line',
-            x1: 0,
-            y1: 0,
-            x2: 967.12,
-            y2: 0,
-            lineWidth: 2,
-            lineColor: '#2563EB',
-          },
-        ],
-        margin: [20, 70, 20, 0],
-      },
-      {
-        columns: [
-          { width: 'auto', stack: [headerCompanyParams] },
-          { width: '*', stack: [headerDates] },
-          { width: '*', stack: [headerTitle] },
-          { width: 'auto', stack: [headerDate] },
-        ],
-        columnGap: 10,
-      },
+    columns: [
+      { width: 'auto', stack: [headerCompanyParams] },
+      { width: '*', stack: [headerDates] },
+      { width: '*', stack: [headerTitle] },
+      { width: 'auto', stack: [headerDate] },
     ],
+    columnGap: 10,
   };
 };

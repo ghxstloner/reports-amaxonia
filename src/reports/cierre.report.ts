@@ -61,7 +61,8 @@ export const getCierreReport = (
       fontSize: 9,
       bold: true,
       alignment: 'center',
-      fillColor: '#2563EB',
+      noWrap: true,
+      fillColor: '#FF613F',
       color: '#FFFFFF',
     },
     {
@@ -69,7 +70,8 @@ export const getCierreReport = (
       fontSize: 9,
       bold: true,
       alignment: 'center',
-      fillColor: '#2563EB',
+      noWrap: true,
+      fillColor: '#FF613F',
       color: '#FFFFFF',
     },
     {
@@ -77,7 +79,8 @@ export const getCierreReport = (
       fontSize: 9,
       bold: true,
       alignment: 'center',
-      fillColor: '#2563EB',
+      noWrap: true,
+      fillColor: '#FF613F',
       color: '#FFFFFF',
     },
     {
@@ -85,30 +88,31 @@ export const getCierreReport = (
       fontSize: 9,
       bold: true,
       alignment: 'center',
-      fillColor: '#2563EB',
+      noWrap: true,
+      fillColor: '#FF613F',
       color: '#FFFFFF',
     },
   ];
 
   const dynamicHeaders = formasDePagoActivas.map((forma) => ({
     text: forma,
-    fontSize: 8,
+    fontSize: 7,
     bold: true,
     alignment: 'center',
-    noWrap: false,
-    fillColor: '#2563EB',
+    noWrap: true,
+    fillColor: '#FF613F',
     color: '#FFFFFF',
-    margin: [0, 3],
+    margin: [0, 2],
   }));
 
   const allHeaders = [...fixedHeaders, ...dynamicHeaders];
 
   const widths = [
-    '6%',
-    '6%',
-    '6%',
-    '6%',
-    ...formasDePagoActivas.map(() => '9.3%'),
+    'auto',
+    'auto',
+    'auto',
+    'auto',
+    ...formasDePagoActivas.map(() => '*'),
   ];
 
   const facturasData = reportData.facturas.map((factura, index) => {
@@ -173,7 +177,7 @@ export const getCierreReport = (
       alignment: 'center',
       bold: true,
       fontSize: 10,
-      fillColor: '#2563EB',
+      fillColor: '#FF613F',
       color: '#FFFFFF',
     },
     {},
@@ -183,7 +187,7 @@ export const getCierreReport = (
       alignment: 'center',
       bold: true,
       fontSize: 10,
-      fillColor: '#2563EB',
+      fillColor: '#FF613F',
       color: '#FFFFFF',
     },
     ...totalFormasDePago.map((total) => ({
@@ -191,7 +195,7 @@ export const getCierreReport = (
       alignment: 'center',
       bold: true,
       fontSize: 10,
-      fillColor: '#2563EB',
+      fillColor: '#FF613F',
       color: '#FFFFFF',
     })),
   ];
@@ -204,7 +208,7 @@ export const getCierreReport = (
     },
     header: headerCustomSection(headerOptions),
     footer: footerSection,
-    pageMargins: [20, 95, 20, 70],
+    pageMargins: [20, 80, 20, 60],
     content: [
       {
         layout: 'customLayout01',
